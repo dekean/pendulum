@@ -364,6 +364,10 @@ pub fn precise_diff<'py>(py: Python, dt1: &'py PyAny, dt2: &'py PyAny) -> PyResu
             Ordering::Greater => {
                 // We have a full month
                 day_diff += days_in_last_month;
+                if day_diff > days_in_month {
+                    day_diff = 0;
+                    month_diff += 1;
+                }
             }
         }
 
