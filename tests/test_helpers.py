@@ -85,6 +85,14 @@ def test_precise_diff() -> None:
     assert_diff(diff, days=6, hours=0)
 
 
+@pytest.mark.parametrize('dt1_day', (28, 29, 30, 31))
+def test_precise_diff_in_jan_and_feb(dt1_day) -> None:
+    dt1 = datetime(2023, 1, dt1_day, 0, 0, 0)
+    dt2 = datetime(2023, 2, 28, 0, 0, 0)
+
+    diff = precise_diff(dt1, dt2)
+    assert_diff(diff, months=1)
+
 def test_precise_diff_timezone() -> None:
     paris = pendulum.timezone("Europe/Paris")
     toronto = pendulum.timezone("America/Toronto")
