@@ -201,6 +201,8 @@ pub fn precise_diff<'py>(py: Python, dt1: &'py PyAny, dt2: &'py PyAny) -> PyResu
     let mut total_days = helpers::day_number(dtinfo2.year, dtinfo2.month as u8, dtinfo2.day as u8)
         - helpers::day_number(dtinfo1.year, dtinfo1.month as u8, dtinfo1.day as u8);
 
+    println!("[PreciseDiff] Total days {:#?}!", total_days);
+
     if dtinfo1.is_datetime {
         let dt1dt: &PyDateTime = dt1.downcast()?;
 
@@ -245,6 +247,7 @@ pub fn precise_diff<'py>(py: Python, dt1: &'py PyAny, dt2: &'py PyAny) -> PyResu
             + dtinfo1.minute * SECS_PER_MIN as i32
             + dtinfo1.second;
     }
+    println!("[PreciseDiff] dtinfo1.total_seconds {:#?}!", dtinfo1.total_seconds);
 
     if dtinfo2.is_datetime {
         let dt2dt: &PyDateTime = dt2.downcast()?;
@@ -290,6 +293,7 @@ pub fn precise_diff<'py>(py: Python, dt1: &'py PyAny, dt2: &'py PyAny) -> PyResu
             + dtinfo2.minute * SECS_PER_MIN as i32
             + dtinfo2.second;
     }
+    println!("[PreciseDiff] dtinfo2.total_seconds {:#?}!", dtinfo2.total_seconds);
 
     if dtinfo1 > dtinfo2 {
         sign = -1;
@@ -297,6 +301,7 @@ pub fn precise_diff<'py>(py: Python, dt1: &'py PyAny, dt2: &'py PyAny) -> PyResu
 
         total_days = -total_days;
     }
+    println!("[PreciseDiff] Corrected total_days {:#?}!", total_days);
 
     let mut year_diff = dtinfo2.year - dtinfo1.year;
     let mut month_diff = dtinfo2.month - dtinfo1.month;
@@ -305,6 +310,13 @@ pub fn precise_diff<'py>(py: Python, dt1: &'py PyAny, dt2: &'py PyAny) -> PyResu
     let mut minute_diff = dtinfo2.minute - dtinfo1.minute;
     let mut second_diff = dtinfo2.second - dtinfo1.second;
     let mut microsecond_diff = dtinfo2.microsecond - dtinfo1.microsecond;
+    println!("[PreciseDiff] year_diff {:#?}!", year_diff);
+    println!("[PreciseDiff] month_diff {:#?}!", month_diff);
+    println!("[PreciseDiff] day_diff {:#?}!", day_diff);
+    println!("[PreciseDiff] hour_diff {:#?}!", hour_diff);
+    println!("[PreciseDiff] minute_diff {:#?}!", minute_diff);
+    println!("[PreciseDiff] second_diff {:#?}!", second_diff);
+    println!("[PreciseDiff] microsecond_diff {:#?}!", microsecond_diff);
 
     if microsecond_diff < 0 {
         microsecond_diff += 1_000_000;
@@ -329,6 +341,8 @@ pub fn precise_diff<'py>(py: Python, dt1: &'py PyAny, dt2: &'py PyAny) -> PyResu
     if day_diff < 0 {
         // If we have a difference in days,
         // we have to check if they represent months
+        println!("[PreciseDiff] Got day_diff {:#?}!", day_diff);
+
         let mut year = dtinfo2.year;
         let mut month = dtinfo2.month;
 
@@ -345,7 +359,10 @@ pub fn precise_diff<'py>(py: Python, dt1: &'py PyAny, dt2: &'py PyAny) -> PyResu
         let days_in_month =
             DAYS_PER_MONTHS[usize::from(helpers::is_leap(dtinfo2.year))][dtinfo2.month as usize];
 
-        match day_diff.cmp(&(days_in_month - days_in_last_month)) {
+        let last_month_diff = days_in_month - days_in_last_month;
+        println!("[PreciseDiff] last_month_diff {:#?}!", last_month_diff);
+
+        match day_diff.cmp(&last_month_diff) {
             Ordering::Less => {
                 // We don't have a full month, we calculate days
                 if days_in_last_month < dtinfo1.day {
@@ -358,18 +375,22 @@ pub fn precise_diff<'py>(py: Python, dt1: &'py PyAny, dt2: &'py PyAny) -> PyResu
                 // We have exactly a full month
                 // We remove the days difference
                 // and add one to the months difference
+                println!("[Equal] Day diff {:#?}!", day_diff);
                 day_diff = 0;
                 month_diff += 1;
             }
             Ordering::Greater => {
                 // We have a full month
-                day_diff += days_in_last_month;
-                if day_diff > days_in_month {
+                if (dtinfo2.day == days_in_month) && (dtinfo1.day > dtinfo2.day) {
                     day_diff = 0;
                     month_diff += 1;
+                } else {
+                    day_diff += days_in_last_month;
+                    
                 }
             }
         }
+
 
         month_diff -= 1;
     }
